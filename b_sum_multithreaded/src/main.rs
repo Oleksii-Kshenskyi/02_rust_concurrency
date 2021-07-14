@@ -7,12 +7,18 @@ static NUM_OF_ELEMS: usize = 500000000;
 lazy_static! {
     static ref V: Vec<u64> = (1..=(NUM_OF_ELEMS as u64)).collect();
 }
+lazy_static! {
+    static ref THREAD_COUNT: usize = how_many_threads_to_use();
+}
+lazy_static! {
+    static ref CHUNK_SIZE: usize = get_chunk_size();
+}
 
 fn sum_mt() -> u64 {
-    let chunk_size = get_chunk_size();
+    // let chunk_size = get_chunk_size();
     let (send_ch, recv_ch): (Sender<u64>, Receiver<u64>) = channel();
 
-    for chunk in V.chunks(chunk_size) {
+    for chunk in V.chunks(*CHUNK_SIZE) {
         let send_ch = send_ch.clone();
         
         thread::spawn(move || {
@@ -22,7 +28,7 @@ fn sum_mt() -> u64 {
     }
 
     let mut the_sum: u64 = 0;
-    for _ in 0..16 {
+    for _ in 0..*THREAD_COUNT {
         let local_sum = recv_ch.recv().unwrap();
         the_sum += local_sum;
     }
